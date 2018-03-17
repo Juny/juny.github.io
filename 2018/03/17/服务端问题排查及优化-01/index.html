@@ -1,0 +1,65 @@
+<!DOCTYPE html><html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>服务端问题排查及优化-01 | Change</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">服务端问题排查及优化-01</h1><a id="logo" href="/.">Change</a><p class="description">to become different</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> Start</i></a><a href="/archives/"><i class="fa fa-archive"> Archiv</i></a><a href="/about/"><i class="fa fa-user"> Über</i></a><a href="/atom.xml"><i class="fa fa-rss"> RSS</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">服务端问题排查及优化-01</h1><div class="post-meta">Mar 17, 2018</div><div class="post-content"><h1 id="服务端问题排查及优化"><a href="#服务端问题排查及优化" class="headerlink" title="服务端问题排查及优化"></a>服务端问题排查及优化</h1><hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ol>
+<li><a href="#1">概述</a></li>
+<li><a href="#2">常见性能问题</a></li>
+<li>总结</li>
+<li>实际案例</li>
+<li>JVM 优化</li>
+</ol>
+<h2 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a><span id="1">1. 概述</span></h2><p>本篇文章主要针对有一定的服务端开发或者测试经验的同学，以及对被分析的应用有一定的了解，或者有相关的开发负责人员辅助。<br>主要内容：  </p>
+<ol>
+<li>常见性能问题以及如何避免  </li>
+<li>常见性能问题的分析方法以及工具的使用  </li>
+<li>实际案例分析</li>
+</ol>
+<h2 id="2-常见性能问题以及分析方法"><a href="#2-常见性能问题以及分析方法" class="headerlink" title="2. 常见性能问题以及分析方法"></a><div id="2">2. 常见性能问题以及分析方法</div></h2><h3 id="常见性能问题"><a href="#常见性能问题" class="headerlink" title="常见性能问题"></a>常见性能问题</h3><ul>
+<li>三高<br>  CPU，内存，线程数  </li>
+<li>慢<br>  业务响应时间慢  </li>
+<li>和预期结果不对<br>  看似理论上没问题的代码，结果就是不对  </li>
+<li>资源不释放<br>  资源不释放导致的内存溢出，系统资源耗尽，响应慢<br>  资源：文件、链接、端口、句柄……  </li>
+<li>IO<br>  网络IO，磁盘IO  </li>
+<li>其他</li>
+</ul>
+<h3 id="CPU高"><a href="#CPU高" class="headerlink" title="CPU高"></a>CPU高</h3><p>CPU高有可能本身不是问题，有可能就是运算需求比较高。<br>如果CPU资源有限，可以尽可能的优化，使CPU在可能的范围内降到最低。  </p>
+<p>可能造成CPU高的情况 :  </p>
+<ul>
+<li>死循环  </li>
+<li>没必要的操作（本地IP、初始化资源。。）  </li>
+<li>频繁线程切换  </li>
+<li>不正常的使用某些类（map）  </li>
+<li>频繁FGC  </li>
+</ul>
+<h3 id="可能导致CPU高的情况"><a href="#可能导致CPU高的情况" class="headerlink" title="可能导致CPU高的情况"></a>可能导致CPU高的情况</h3><ol>
+<li>代码Bug<br>可能性太多……</li>
+<li>死循环<br>手抖写的死循环或者计算失误导致死循环</li>
+<li>线程数太多（线程数量是否比预期的异常的高）<br>大量的线程切换<br>频繁创建线程<br>线程池不正常的使用（FixedThreadPool,CacheThreadPool）  </li>
+<li>FGC<br>频繁的FGC也会导致CPU高</li>
+<li>其他<br>大量数据的复制和一些类的不正常使用，比如map的resize，list的clone<br>没必要的操作（本地IP、初始化资源。。）</li>
+</ol>
+<h3 id="分析方法"><a href="#分析方法" class="headerlink" title="分析方法"></a>分析方法</h3><ul>
+<li><p>用到的工具和命令<br>  jvisualvm<br>  jstack，jstat，jmap，ps，top</p>
+</li>
+<li><p>情况一：单核CPU使用率一直100%<br>  大多情况为死循环或者某个线程一直在执行大量运算操作</p>
+</li>
+<li><p>情况二：单核CPU使用率不定时100%<br>  应用本身有周期性的任务<br>  非人为的周期性操作，比如FGC,大量数据的copy（list,map）</p>
+</li>
+<li><p>情况三：每核CPU使用率都高<br>  需要结合堆栈、代码、资源占用、内存情况等，全面的考虑和分析。</p>
+</li>
+</ul>
+<h3 id="Java-CPU-问题分析"><a href="#Java-CPU-问题分析" class="headerlink" title="Java CPU 问题分析"></a>Java CPU 问题分析</h3><ul>
+<li><p>方法1<br>  Java Visualvm直接连接进程分析，能够比较直观的看到每个方法所用的CPU时间，更容易定位问题。大多数情况下生产环境无法使用。适用于被测对象问题能够复现，且配置的远程rmi监控的情况。生产环境不会配置远程监控。  </p>
+<p>  java服务启动时需配置启动参数：<br>  -Dcom.sun.management.jmxremote.port=8999 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.rmi.server.hostname=192.168.143.136</p>
+<p>  使用方法见demo演示。</p>
+</li>
+<li><p>方法2<br>  在CPU高的时候抓线程堆栈，适用于CPU相对比较高的情况，如果条件允许可以把服务压力加大到尽量大，使CPU尽量高后去分析问题。  </p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">jstack pid &gt; /tmp/jstack.txt  </span><br><span class="line">```  </span><br><span class="line">找到占用cpu时间比较多的线程id</span><br></pre></td></tr></table></figure>
+<p>  ps -mp pid -o THREAD,tid,time | awk ‘{printf $2” “$8”\n” }’ | sort</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">把线程id转换为10进制，8进制？</span><br></pre></td></tr></table></figure>
+<p>  printf “%x\n” tid</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">输出线程堆栈</span><br></pre></td></tr></table></figure>
+<p>  jstack pid | grep –A 20 tid<br>  <code>`</code>  </p>
+<p>  连续抓取几次堆栈信息，分析正在运行的线程，分析当前操作是否耗费CPU，这么多运行的是否正常，业务堆栈是否正常，该业务可能出现的问题等等。</p>
+</li>
+</ul>
+<h2 id="3-总结"><a href="#3-总结" class="headerlink" title="3. 总结"></a><div id="3">3. 总结</div></h2><p>##<br><span id="jump">Hello World</span><br> <a href="#jump">XXXX</a></p>
+</div><div class="tags"></div><div class="post-nav"><a class="pre" href="/2018/03/17/服务端问题排查及优化-1-概述/">服务端问题排查及优化 - 1.概述</a><a class="next" href="/2018/03/17/My-First-Post/">My First Post</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://pages.junying.xyz"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> Kategorien</i></div></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> Tags</i></div><div class="tagcloud"><a href="/tags/性能测试/" style="font-size: 15px;">性能测试</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> Letzte</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-10-案例分析/">服务端问题排查及优化 - 10.案例分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-9-总结/">服务端问题排查及优化 - 9.总结</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-8-其他/">服务端问题排查及优化 - 8.其他</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-7-趟过的坑/">服务端问题排查及优化 - 7.趟过的坑</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-6-IO问题分析/">服务端问题排查及优化 - 6.IO问题分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-5-线程数问题分析/">服务端问题排查及优化 - 5.线程数问题分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-4-高延迟问题分析/">服务端问题排查及优化 - 4.高延迟问题分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-3-内存问题分析/">服务端问题排查及优化 - 3.内存问题分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-2-CPU高问题分析/">服务端问题排查及优化 - 2.CPU高问题分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端问题排查及优化-1-概述/">服务端问题排查及优化 - 1.概述</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> Blogroll</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2018 <a href="/." rel="nofollow">Change.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.2.5/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.2.5/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
