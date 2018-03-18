@@ -1,4 +1,316 @@
-<!DOCTYPE html><html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>服务端性能问题排查及优化 - 2.CPU高问题分析 | Change</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/7.0.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/1.0.0/grids-responsive-min.css"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script><script type="text/javascript" src="/baidu/a.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">服务端性能问题排查及优化 - 2.CPU高问题分析</h1><a id="logo" href="/.">Change</a><p class="description">to become different</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> Start</i></a><a href="/archives/"><i class="fa fa-archive"> Archiv</i></a><a href="/about/"><i class="fa fa-user"> Über</i></a><a href="/atom.xml"><i class="fa fa-rss"> RSS</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">服务端性能问题排查及优化 - 2.CPU高问题分析</h1><div class="post-meta">Mar 17, 2018</div><div class="post-content"><p>CPU高有可能本身不是问题，有可能就是运算需求比较高。<br>如果CPU资源有限，可以尽可能的优化，使CPU在可能的范围内降到最低。  </p>
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="性能测试," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="CPU高有可能本身不是问题，有可能就是运算需求比较高。如果CPU资源有限，可以尽可能的优化，使CPU在可能的范围内降到最低。   可能造成CPU高的情况 :    死循环   没必要的操作（本地IP、初始化资源。。）   频繁线程切换   不正常的使用某些类（map）   频繁FGC">
+<meta name="keywords" content="性能测试">
+<meta property="og:type" content="article">
+<meta property="og:title" content="服务端性能问题排查及优化 - 2.CPU高问题分析">
+<meta property="og:url" content="http://pages.junying.xyz/2018/03/17/服务端性能问题排查及优化-2-CPU高问题分析/index.html">
+<meta property="og:site_name" content="Change">
+<meta property="og:description" content="CPU高有可能本身不是问题，有可能就是运算需求比较高。如果CPU资源有限，可以尽可能的优化，使CPU在可能的范围内降到最低。   可能造成CPU高的情况 :    死循环   没必要的操作（本地IP、初始化资源。。）   频繁线程切换   不正常的使用某些类（map）   频繁FGC">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-03-18T07:37:11.130Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="服务端性能问题排查及优化 - 2.CPU高问题分析">
+<meta name="twitter:description" content="CPU高有可能本身不是问题，有可能就是运算需求比较高。如果CPU资源有限，可以尽可能的优化，使CPU在可能的范围内降到最低。   可能造成CPU高的情况 :    死循环   没必要的操作（本地IP、初始化资源。。）   频繁线程切换   不正常的使用某些类（map）   频繁FGC">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://pages.junying.xyz/2018/03/17/服务端性能问题排查及优化-2-CPU高问题分析/"/>
+
+
+
+
+
+  <title>服务端性能问题排查及优化 - 2.CPU高问题分析 | Change</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?3b0261fbc76b3a1cb87e7bec83792ee1";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Change</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">to become different</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://pages.junying.xyz/2018/03/17/服务端性能问题排查及优化-2-CPU高问题分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="No40">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Change">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">服务端性能问题排查及优化 - 2.CPU高问题分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-17T16:53:52+08:00">
+                2018-03-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>CPU高有可能本身不是问题，有可能就是运算需求比较高。<br>如果CPU资源有限，可以尽可能的优化，使CPU在可能的范围内降到最低。  </p>
 <p>可能造成CPU高的情况 :  </p>
 <ul>
 <li>死循环  </li>
@@ -38,5 +350,389 @@
 <p>  连续抓取几次堆栈信息，分析正在运行的线程，分析当前操作是否耗费CPU，这么多运行的是否正常，业务堆栈是否正常，该业务可能出现的问题等等。  </p>
 </li>
 </ul>
-<h2 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h2><p>待补充</p>
-</div><div class="tags"><a href="/tags/性能测试/">性能测试</a></div><div class="post-nav"><a class="pre" href="/2018/03/17/服务端性能问题排查及优化-3-内存问题分析/">服务端性能问题排查及优化 - 3.内存问题分析</a><a class="next" href="/2018/03/17/服务端性能问题排查及优化-1-概述/">服务端性能问题排查及优化 - 1.概述</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://pages.junying.xyz"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> Kategorien</i></div></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> Tags</i></div><div class="tagcloud"><a href="/tags/性能测试/" style="font-size: 15px;">性能测试</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> Letzte</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端性能问题排查及优化-3-内存问题分析/">服务端性能问题排查及优化 - 3.内存问题分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端性能问题排查及优化-2-CPU高问题分析/">服务端性能问题排查及优化 - 2.CPU高问题分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/17/服务端性能问题排查及优化-1-概述/">服务端性能问题排查及优化 - 1.概述</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> Blogroll</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2018 <a href="/." rel="nofollow">Change.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=0.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/3.2.5/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=0.0.0" async></script><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/fancybox/3.2.5/jquery.fancybox.min.css"><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
+<h2 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h2><h3 id="案例介绍"><a href="#案例介绍" class="headerlink" title="案例介绍"></a>案例介绍</h3><p>测试时发现使用的的测试客户端CPU高，表现为运行一段时间后，CPU突然100%，出现该情况后不能恢复正常。</p>
+<h3 id="分析过程"><a href="#分析过程" class="headerlink" title="分析过程"></a>分析过程</h3><ol>
+<li>首先抓取客户端的线程堆栈，看看能否发现什么可以的地方。</li>
+<li>分析堆栈发现线程有1000多，大部分为BLOCKED状态，ACTIVE状态基本看到的都是nio的，暂时没看到问题。</li>
+<li>继续搜索本地package的以下名称，看看有没有在执行自己代码的地方，正好发现一些类似以下的信息。</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Thread 1134: (state = IN_NATIVE)</span><br><span class="line"> - java.net.NetworkInterface.getAll() @bci=0 (Compiled frame; information may be imprecise)</span><br><span class="line"> - java.net.NetworkInterface.getNetworkInterfaces() @bci=0, line=334 (Compiled frame)</span><br><span class="line"> - com.alibaba.rocketmq.remoting.common.RemotingUtil.getLocalAddress() @bci=0, line=112 (Compiled frame)</span><br><span class="line"> - com.alibaba.rocketmq.client.ClientConfig.&lt;init&gt;() @bci=19, line=32 (Compiled frame)</span><br><span class="line"> - com.alibaba.rocketmq.client.producer.DefaultMQProducer.&lt;init&gt;(java.lang.String, com.alibaba.rocketmq.remoting.RPCHook) @bci=1, line=95 (Compiled frame)</span><br><span class="line"> - com.alibaba.rocketmq.client.producer.DefaultMQProducer.&lt;init&gt;(java.lang.String) @bci=3, line=86 (Compiled frame)</span><br><span class="line"> - ********************MQProducer.&lt;init&gt;(java.lang.String, java.lang.String) @bci=71, line=62 (Compiled frame)</span><br><span class="line"> - ********************.RocketMQ.sendMessage() @bci=76,line=119 (Compiled frame)     // 119为源代码行号</span><br><span class="line"> - ********************.RocketMQ$1$1.safeRun() @bci=7, line=53 (Compiled frame)</span><br><span class="line"> - ********************.SafeRunnable.run() @bci=1, line=13 (Compiled frame)</span><br><span class="line"> - java.util.concurrent.ThreadPoolExecutor.runWorker(java.util.concurrent.ThreadPoolExecutor$Worker) @bci=95, line=1145 (Compiled frame)</span><br><span class="line"> - java.util.concurrent.ThreadPoolExecutor$Worker.run() @bci=5, line=615 (Interpreted frame)</span><br><span class="line"> - java.lang.Thread.run() @bci=11, line=745 (Interpreted frame)</span><br></pre></td></tr></table></figure>
+<p>发现这些线程都在执行java.net.NetworkInterface.getAll() ，此方法比较耗费CPU，之前遇到过类似案例。接着分析为什么这几个线程会卡到这。   </p>
+<ol>
+<li>根据代码分析都在执行这个操作的原因。</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">public void sendMessage() &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        // 略…</span><br><span class="line">        Message msg = new Message(&quot;Performace&quot;, msgContent.getBytes(&quot;UTF-8&quot;));</span><br><span class="line">        if (producer == null) &#123;</span><br><span class="line">            producer = new MQProducer(&quot;Performace&quot;, &quot;192.168.143.135:9876&quot;);      (1)</span><br><span class="line">            producer.start();</span><br><span class="line">            rst = producer.product(msg);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            rst = producer.product(msg);</span><br><span class="line">        &#125;</span><br><span class="line">        // 略…</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        if (producer != null) &#123;</span><br><span class="line">            producer.shutdown();</span><br><span class="line">            producer = null;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>sendMessage方法会被随机的注册到一个timer线程池上，有可能会在同一时间点或者很近时间点同时执行该方法。<br>producer.product(msg);为给远端发送信息，如果因为网络原因或者其他未知原因导致Exception，会把producer赋值为null，当再次执行sendMessage会重新初始化producer，如果恰好有多线程并发执行sendMessage，可能会导致重复初始化以及其他并发问题，导致恶性循环，恰好这个过程对CPU消耗比较多。</p>
+<p>以上为一个简单案例的分析过程，实际过程中可能会比这个过程曲折的多，需要多方吗的去考虑整个问题。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/性能测试/" rel="tag"># 性能测试</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/17/服务端性能问题排查及优化-1-概述/" rel="next" title="服务端性能问题排查及优化 - 1.概述">
+                <i class="fa fa-chevron-left"></i> 服务端性能问题排查及优化 - 1.概述
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/17/服务端性能问题排查及优化-3-内存问题分析/" rel="prev" title="服务端性能问题排查及优化 - 3.内存问题分析">
+                服务端性能问题排查及优化 - 3.内存问题分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">No40</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">标签</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#可能导致CPU高的情况"><span class="nav-number">1.</span> <span class="nav-text">可能导致CPU高的情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析方法"><span class="nav-number">2.</span> <span class="nav-text">分析方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Java-CPU-问题分析"><span class="nav-number">3.</span> <span class="nav-text">Java CPU 问题分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例分析"><span class="nav-number"></span> <span class="nav-text">案例分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#案例介绍"><span class="nav-number">1.</span> <span class="nav-text">案例介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析过程"><span class="nav-number">2.</span> <span class="nav-text">分析过程</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">No40</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
