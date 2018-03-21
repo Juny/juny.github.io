@@ -79,20 +79,20 @@
 
 
 
-<meta name="description" content="内存问题主要体现在内存溢出以及垃圾回方面。">
+<meta name="description" content="内存问题主要体现在以下几个方面    内存溢出   内存各区比例的配置不合理 垃圾回收方式不合理    本文主要介绍内存溢出的排查方法。">
 <meta name="keywords" content="性能测试">
 <meta property="og:type" content="article">
 <meta property="og:title" content="服务端性能问题排查及优化 - 3.内存问题分析">
 <meta property="og:url" content="http://pages.junying.xyz/2018/03/17/服务端性能问题排查及优化-3-内存问题分析/index.html">
 <meta property="og:site_name" content="Change">
-<meta property="og:description" content="内存问题主要体现在内存溢出以及垃圾回方面。">
+<meta property="og:description" content="内存问题主要体现在以下几个方面    内存溢出   内存各区比例的配置不合理 垃圾回收方式不合理    本文主要介绍内存溢出的排查方法。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://pages.junying.xyz/img/服务端性能问题排查及优化/3.1.jpg">
 <meta property="og:image" content="http://pages.junying.xyz/img/服务端性能问题排查及优化/3.2.jpg">
-<meta property="og:updated_time" content="2018-03-18T07:14:04.650Z">
+<meta property="og:updated_time" content="2018-03-21T14:51:04.611Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="服务端性能问题排查及优化 - 3.内存问题分析">
-<meta name="twitter:description" content="内存问题主要体现在内存溢出以及垃圾回方面。">
+<meta name="twitter:description" content="内存问题主要体现在以下几个方面    内存溢出   内存各区比例的配置不合理 垃圾回收方式不合理    本文主要介绍内存溢出的排查方法。">
 <meta name="twitter:image" content="http://pages.junying.xyz/img/服务端性能问题排查及优化/3.1.jpg">
 
 
@@ -313,7 +313,13 @@
       
 
       
-        <p>内存问题主要体现在内存溢出以及垃圾回方面。  </p>
+        <p>内存问题主要体现在以下几个方面  </p>
+<ul>
+<li>内存溢出  </li>
+<li>内存各区比例的配置不合理</li>
+<li>垃圾回收方式不合理  </li>
+</ul>
+<p>本文主要介绍内存溢出的排查方法。</p>
 <a id="more"></a>
 <ul>
 <li><p>内存溢出<br>首先，在发生内存溢出的时候，一定要第一时间抓内存的快照，有助于问题的分析。<br>当内存溢出时需要先分析当前内存配置是否合理，而不是直接增大内存配置。  </p>
@@ -322,7 +328,9 @@
 <li>一个有状态的服务，需要在开始阶段计算需要缓存的数据，并配置合理的内存大小。  </li>
 </ul>
 </li>
-<li><p>垃圾回收问题<br>Java GC方式和参数有很多，常用的有以下几种模式。<br><code>-XX:+UseParallelOldGC</code> FGC时会停顿比较长的时间。<br><code>-XX:+UseConcMarkSweepGC</code> FGC停顿时间短，目前生产环境大多使用此配置。<br><code>-XX:+UseG1GC</code>  没测试过。  </p>
+<li><p>垃圾回收问题 - <strong>待补充</strong>。<br>Java GC方式和参数有很多，常用的有以下几种模式。<br><code>-XX:+UseParallelOldGC</code> FGC时会停顿比较长的时间。<br><code>-XX:+UseConcMarkSweepGC</code> FGC停顿时间短，目前生产环境大多使用此配置。<br><code>-XX:+UseG1GC</code> </p>
+</li>
+<li><p>JVM参数配置的不合理导致的内存问题 - <strong>待补充</strong><br>比如配置的太小或者太大，每个区的比例等。  </p>
 </li>
 </ul>
 <p>高并发的系统中，服务端响应速度对服务本身影响很大，响应时间从1秒增加到2秒会导致内存里的对象的生命周期变长，导致内存增大。生命周期变长还会导致原本在Young区能回收的对象提升到Old区，导致频繁的FGC。</p>
@@ -342,7 +350,7 @@
 <ul>
 <li>通过jviaualvm加载抓取的dump，加载成功后切换到类的标签，并按实例数量倒序排列，类似以下<br><img src="/img/服务端性能问题排查及优化/3.1.jpg" alt="test"><br>通常情况下，实例最多的为基础类型，比如byte、string、int等。尽量先从本项目的类来分析。<br>通过对应用代码的了解后，发现MemoryLeak数量异常。<br><img src="/img/服务端性能问题排查及优化/3.2.jpg" alt="test"><br>点击MemoryLeak展开所有的MemoryLeak对象，通过右下角的引用查找对象的根节点，同时结合代码去分析。</li>
 </ul>
-<h2 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h2><h3 id="案例介绍"><a href="#案例介绍" class="headerlink" title="案例介绍"></a>案例介绍</h3><p>测试时发现使用的的测试客户端CPU高，表现为运行一段时间后，CPU突然100%，出现该情况后不能恢复正常。</p>
+<h2 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h2><h3 id="案例介绍"><a href="#案例介绍" class="headerlink" title="案例介绍"></a>案例介绍</h3><p>待补充。</p>
 
       
     </div>
