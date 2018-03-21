@@ -87,7 +87,7 @@
 <meta property="og:site_name" content="Change">
 <meta property="og:description" content="CPU高是常见的性能问题，但CPU高并不一定都是有问题，有可能你的业务就是CPU密集型的业务。如果CPU资源有限的情况下，本文可以提供一下优化CPU使用的方法，可以尽可能的优化，使CPU在可能的范围内降到最低。   可能造成CPU高的情况 :    代码Bug   意外的死循环   线程数太多，频繁线程切换   频繁的FGC 不正常的使用某些类">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-03-21T14:22:40.369Z">
+<meta property="og:updated_time" content="2018-03-21T14:57:36.606Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="服务端性能问题排查及优化 - 2.CPU高问题分析">
 <meta name="twitter:description" content="CPU高是常见的性能问题，但CPU高并不一定都是有问题，有可能你的业务就是CPU密集型的业务。如果CPU资源有限的情况下，本文可以提供一下优化CPU使用的方法，可以尽可能的优化，使CPU在可能的范围内降到最低。   可能造成CPU高的情况 :    代码Bug   意外的死循环   线程数太多，频繁线程切换   频繁的FGC 不正常的使用某些类">
@@ -350,8 +350,8 @@ jstack，jstat，jmap，ps，top
 <p>  连续抓取几次堆栈信息，分析正在运行的线程，分析当前操作是否耗费CPU，这么多运行的是否正常，业务堆栈是否正常，该业务可能出现的问题等等。  </p>
 </li>
 </ul>
-<h2 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h2><h3 id="案例介绍"><a href="#案例介绍" class="headerlink" title="案例介绍"></a>案例介绍</h3><p>测试时发现使用的的测试客户端CPU高，表现为运行一段时间后，CPU突然100%，出现该情况后不能恢复正常。</p>
-<h3 id="分析过程-1"><a href="#分析过程-1" class="headerlink" title="分析过程"></a>分析过程</h3><ol>
+<h3 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h3><h4 id="案例介绍"><a href="#案例介绍" class="headerlink" title="案例介绍"></a>案例介绍</h4><p>测试时发现使用的的测试客户端CPU高，表现为运行一段时间后，CPU突然100%，出现该情况后不能恢复正常。</p>
+<h4 id="分析过程-1"><a href="#分析过程-1" class="headerlink" title="分析过程"></a>分析过程</h4><ol>
 <li>首先抓取客户端的线程堆栈，看看能否发现什么可以的地方。</li>
 <li>分析堆栈发现线程有1000多，大部分为BLOCKED状态，ACTIVE状态基本看到的都是nio的，暂时没看到问题。</li>
 <li>继续搜索本地package的以下名称，看看有没有在执行自己代码的地方，正好发现一些类似以下的信息。</li>
@@ -363,7 +363,7 @@ jstack，jstat，jmap，ps，top
 </ol>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">public void sendMessage() &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        // 略…</span><br><span class="line">        Message msg = new Message(&quot;Performace&quot;, msgContent.getBytes(&quot;UTF-8&quot;));</span><br><span class="line">        if (producer == null) &#123;</span><br><span class="line">            producer = new MQProducer(&quot;Performace&quot;, &quot;192.168.143.135:9876&quot;);      (1)</span><br><span class="line">            producer.start();</span><br><span class="line">            rst = producer.product(msg);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            rst = producer.product(msg);</span><br><span class="line">        &#125;</span><br><span class="line">        // 略…</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        if (producer != null) &#123;</span><br><span class="line">            producer.shutdown();</span><br><span class="line">            producer = null;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>sendMessage方法会被随机的注册到一个timer线程池上，有可能会在同一时间点或者很近时间点同时执行该方法。<br>producer.product(msg);为给远端发送信息，如果因为网络原因或者其他未知原因导致Exception，会把producer赋值为null，当再次执行sendMessage会重新初始化producer，如果恰好有多线程并发执行sendMessage，可能会导致重复初始化以及其他并发问题，导致恶性循环，恰好这个过程对CPU消耗比较多。</p>
-<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>以上是一个工作上简单案例的分析过程，实际工作中遇到的问题可能会复杂的多，过程可能会更曲折，需要从更多的方面去了解被测对象，甚至需要比开发自己更了解整个系统的架构，才能从多个方面去考虑问题，查找问题的真正原因。  </p>
+<h3 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h3><p>以上是一个工作上简单案例的分析过程，实际工作中遇到的问题可能会复杂的多，过程可能会更曲折，需要从更多的方面去了解被测对象，甚至需要比开发自己更了解整个系统的架构，才能从多个方面去考虑问题，查找问题的真正原因。  </p>
 
       
     </div>
@@ -529,7 +529,7 @@ jstack，jstat，jmap，ps，top
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#可能导致CPU高的情况"><span class="nav-number">1.</span> <span class="nav-text">可能导致CPU高的情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析过程"><span class="nav-number">2.</span> <span class="nav-text">分析过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#用到的工具和命令"><span class="nav-number">2.1.</span> <span class="nav-text">用到的工具和命令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CPU高的集中情况"><span class="nav-number">2.2.</span> <span class="nav-text">CPU高的集中情况</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#分析方法"><span class="nav-number">2.3.</span> <span class="nav-text">分析方法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例分析"><span class="nav-number"></span> <span class="nav-text">案例分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#案例介绍"><span class="nav-number">1.</span> <span class="nav-text">案例介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析过程-1"><span class="nav-number">2.</span> <span class="nav-text">分析过程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后"><span class="nav-number"></span> <span class="nav-text">最后</span></a></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#可能导致CPU高的情况"><span class="nav-number">1.</span> <span class="nav-text">可能导致CPU高的情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析过程"><span class="nav-number">2.</span> <span class="nav-text">分析过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#用到的工具和命令"><span class="nav-number">2.1.</span> <span class="nav-text">用到的工具和命令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CPU高的集中情况"><span class="nav-number">2.2.</span> <span class="nav-text">CPU高的集中情况</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#分析方法"><span class="nav-number">2.3.</span> <span class="nav-text">分析方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#案例分析"><span class="nav-number">3.</span> <span class="nav-text">案例分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#案例介绍"><span class="nav-number">3.1.</span> <span class="nav-text">案例介绍</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#分析过程-1"><span class="nav-number">3.2.</span> <span class="nav-text">分析过程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最后"><span class="nav-number">4.</span> <span class="nav-text">最后</span></a></li></ol></div>
             
 
           </div>
