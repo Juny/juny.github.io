@@ -81,7 +81,7 @@
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Change">
-<meta property="og:url" content="http://pages.junying.xyz/index.html">
+<meta property="og:url" content="http://pages.no40.xyz/index.html">
 <meta property="og:site_name" content="Change">
 <meta property="og:locale" content="zh-Hans">
 <meta name="twitter:card" content="summary">
@@ -115,7 +115,7 @@
 
 
 
-  <link rel="canonical" href="http://pages.junying.xyz/"/>
+  <link rel="canonical" href="http://pages.no40.xyz/"/>
 
 
 
@@ -239,7 +239,141 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://pages.junying.xyz/2018/03/17/服务端性能问题排查及优化-3-内存问题分析/">
+    <link itemprop="mainEntityOfPage" href="http://pages.no40.xyz/2018/03/24/服务端性能问题排查及优化-4-高延迟问题分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="No40">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Change">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/03/24/服务端性能问题排查及优化-4-高延迟问题分析/" itemprop="url">服务端性能问题排查及优化 - 4.高延迟问题分析</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-24T09:05:03+08:00">
+                2018-03-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>延迟高有很多叫法，比如响应时间长、服务器反应慢、业务超时等，最根本的表现就是客户端发送请求到服务端后，服务器很长时间才给应答或者根本就没给应答。 </p>
+<p>造成延迟高（响应时间长）的原因有很多，比如：  </p>
+<ol>
+<li>服务端应用压力太大，确实处理不过来了  </li>
+<li>使用了不恰当的同步锁（代码级别或者其他资源锁）  </li>
+<li>第三方资源的不给力  </li>
+<li>线程池配置的不合理，线程数配置的太少导致的请求积压  </li>
+<li>网络原因，丢包、带宽限制、重传等  </li>
+<li>sleep  </li>
+<li>调用端代码有问题导致服务器应答到达客户端后，客户端处理不及时，可能也会误认为响应时间长  </li>
+</ol>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/03/24/服务端性能问题排查及优化-4-高延迟问题分析/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://pages.no40.xyz/2018/03/17/服务端性能问题排查及优化-3-内存问题分析/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="No40">
@@ -369,7 +503,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://pages.junying.xyz/2018/03/17/服务端性能问题排查及优化-2-CPU高问题分析/">
+    <link itemprop="mainEntityOfPage" href="http://pages.no40.xyz/2018/03/17/服务端性能问题排查及优化-2-CPU高问题分析/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="No40">
@@ -501,7 +635,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://pages.junying.xyz/2018/03/17/服务端性能问题排查及优化-1-概述/">
+    <link itemprop="mainEntityOfPage" href="http://pages.no40.xyz/2018/03/17/服务端性能问题排查及优化-1-概述/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="No40">
@@ -663,7 +797,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
