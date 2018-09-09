@@ -87,10 +87,12 @@
 <meta property="og:site_name" content="Change">
 <meta property="og:description" content="CPU高是常见的性能问题，但CPU高并不一定都是有问题，有可能你的业务就是CPU密集型的业务。如果CPU资源有限的情况下，本文可以提供一下优化CPU使用的方法，可以尽可能的优化，使CPU在可能的范围内降到最低。   可能造成CPU高的情况 :    代码Bug   意外的死循环   线程数太多，频繁线程切换   频繁的FGC 不正常的使用某些类">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-09-09T10:30:19.173Z">
+<meta property="og:image" content="http://pages.no40.xyz/img/服务端性能问题排查及优化/3.1.jpg">
+<meta property="og:updated_time" content="2018-09-09T13:57:14.098Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="服务端性能问题排查及优化 - 2.CPU高问题分析">
 <meta name="twitter:description" content="CPU高是常见的性能问题，但CPU高并不一定都是有问题，有可能你的业务就是CPU密集型的业务。如果CPU资源有限的情况下，本文可以提供一下优化CPU使用的方法，可以尽可能的优化，使CPU在可能的范围内降到最低。   可能造成CPU高的情况 :    代码Bug   意外的死循环   线程数太多，频繁线程切换   频繁的FGC 不正常的使用某些类">
+<meta name="twitter:image" content="http://pages.no40.xyz/img/服务端性能问题排查及优化/3.1.jpg">
 
 
 
@@ -340,8 +342,7 @@ jstack，jstat，jmap，ps，top
 <h4 id="分析方法"><a href="#分析方法" class="headerlink" title="分析方法"></a>分析方法</h4><ul>
 <li><p>方法1<br>  Java Visualvm直接连接进程分析，能够比较直观的看到每个方法所用的CPU时间，更容易定位问题。大多数情况下生产环境无法使用。适用于被测对象问题能够复现，且配置的远程rmi监控的情况。生产环境不会配置远程监控。  </p>
 <p>  java服务启动时需配置启动参数：<br>  -Dcom.sun.management.jmxremote.port=8999 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.rmi.server.hostname=192.168.143.136</p>
-<p>  使用方法见demo演示。  </p>
-  <iframe width="560" height="315" src="https://youtu.be/XkbxE07k0Jw" frameborder="0" allowfullscreen></iframe>  
+<p>  使用方法见以下演示。<br> <img src="/img/服务端性能问题排查及优化/3.1.jpg" alt="VisualVM-CPU"> </p>
 </li>
 <li><p>方法2<br>  在CPU高的时候抓线程堆栈，适用于CPU相对比较高的情况，如果条件允许可以把服务压力加大到尽量大，使CPU尽量高后去分析问题。 </p>
 <p>  抓取线程执行堆栈<br>  <code>jstack pid &gt; /tmp/jstack.txt</code>  </p>
